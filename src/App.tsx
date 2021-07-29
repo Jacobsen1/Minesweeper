@@ -4,11 +4,11 @@ import { Grid } from "@material-ui/core"
 import { makeStyles } from "@material-ui/core/styles"
 import { Cell, findNeighbors, initBoard } from "./GameLogic"
 import { useState } from "react"
-import { Icon, InlineIcon } from '@iconify/react';
-import mineIcon from '@iconify-icons/mdi/mine';
+import { Icon, InlineIcon } from "@iconify/react"
+import mineIcon from "@iconify-icons/mdi/mine"
+import flagIcon from "@iconify-icons/dashicons/flag"
 
-
-const width = 800
+const width = 1400
 const height = 800
 const cellSize = 50
 
@@ -26,8 +26,9 @@ const useStyles = makeStyles((theme) => ({
   cell: {
     position: "absolute",
     border: "2px solid gray",
-    width: cellSize,
-    height: cellSize,
+    width: cellSize + "px",
+    height: cellSize + "px",
+    lineHeight: cellSize + "px",
   },
 }))
 
@@ -37,6 +38,12 @@ function App() {
   const [cells, setCells] = useState<Cell[][]>(() =>
     initBoard(numRows, numCols)
   )
+
+  const toggleFlag = (i: number, j: number) => {
+    let newCells = [...cells]
+    newCells[i][j].hasFlag = !newCells[i][j].hasFlag
+    setCells(newCells)
+  }
 
   const leftClick = (i: number, j: number, depth: number) => {
     let newCells = [...cells]
@@ -87,14 +94,28 @@ function App() {
                     top: i * cellSize,
                     backgroundColor: cell.isOpened ? "darkGray" : "lightGray",
                   }}
-                  onClick={() => {
+                  //RIGHT CLICK
+                  onContextMenu={(e) => {
+                    e.preventDefault()
+                    toggleFlag(i, j)
+                  }}
+                  //LEFT CLICK
+                  onClick={(e) => {
                     leftClick(i, j, 0)
                   }}
                 >
-                  <p>{cell.isOpened ? 
-                    cell.neighborMineCount > 0 ?
-                  cell.neighborMineCount : "" : "b"}</p>
-                </div>
+                  {cell.isOpened ? (
+                    cell.neighborMineCount >= 0 ? (
+                      <span>{cell.neighborMineCount}</span>
+                    ) : (
+                      <Icon icon={mineIcon} />
+                    )
+                  ) : cell.hasFlag ? (
+                    <Icon icon={flagIcon} />
+                  ) : (
+                    ""
+                  )}
+                  </div>
               )
             })
           })}

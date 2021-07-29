@@ -105,7 +105,7 @@ export const findNeighbors = (cellsArr: Cell[][], i: number, j: number) => {
         let rx = x + i;
         let ry = y + j;
 
-        if (rx >= 0 && ry >= 0 && rx < numCols && ry < numRows){
+        if (rx >= 0 && ry >= 0 && rx < numRows && ry < numCols){
           if(x !== 0 || y !== 0){
               neighbors.push(cellsArr[i + x][j + y])
            }
