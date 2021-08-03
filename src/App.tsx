@@ -4,37 +4,29 @@ import { Grid } from "@material-ui/core"
 import { makeStyles } from "@material-ui/core/styles"
 import { Cell, findNeighbors, initBoard } from "./GameLogic"
 import { useState } from "react"
-import { Icon, InlineIcon } from "@iconify/react"
-import mineIcon from "@iconify-icons/mdi/mine"
-import flagIcon from "@iconify-icons/dashicons/flag"
+import { MemoizedCell } from "./Cell"
 
-const width = 1400
-const height = 800
-const cellSize = 50
-
+export const width = 1400
+export const height = 800
+export const cellSize = 50
 export const numRows = height / cellSize
 export const numCols = width / cellSize
+export const borderSize = Math.ceil(cellSize * 0.15)
 
 const useStyles = makeStyles((theme) => ({
   board: {
     width: width,
     height: height,
-    //border: "1px solid black",
     position: "relative",
     margin: "auto",
-  },
-  cell: {
-    position: "absolute",
-    border: "2px solid gray",
-    width: cellSize + "px",
-    height: cellSize + "px",
-    lineHeight: cellSize + "px",
+
+    display: "grid",
+    gridTemplateColumns: "repeat(" + numCols + ", 1fr)",
+    gridTemplateRows: "repeat(" + numRows + ", 1fr)",
   },
 }))
 
 function App() {
-  const classes = useStyles()
-
   const [cells, setCells] = useState<Cell[][]>(() =>
     initBoard(numRows, numCols)
   )
@@ -59,9 +51,9 @@ function App() {
         if (depth < 100) {
           depth++
           newCells[i][j].isOpened = true
-          console.log("Finding Neighbors for " + i + ", " + j)
+          //console.log("Finding Neighbors for " + i + ", " + j)
           let neighbors = findNeighbors(newCells, i, j)
-          console.log(neighbors)
+          //console.log(neighbors)
           for (let i = 0; i < neighbors.length; i++) {
             if (!neighbors[i].hasFlag && !neighbors[i].isOpened) {
               leftClick(neighbors[i].row, neighbors[i].col, depth)
@@ -74,6 +66,8 @@ function App() {
   }
 
   //console.log(cells)
+  const classes = useStyles()
+
   return (
     <div className="App">
       <Grid
@@ -86,6 +80,12 @@ function App() {
           {cells.map((row, i) => {
             return row.map((cell, j) => {
               return (
+                <MemoizedCell
+                  cell={cell}
+                  toggleFlag={toggleFlag}
+                  leftClick={leftClick}
+                />
+                /*
                 <div
                   key={i * j + j}
                   className={classes.cell}
@@ -116,6 +116,7 @@ function App() {
                     ""
                   )}
                   </div>
+                  */
               )
             })
           })}
