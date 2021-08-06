@@ -6,8 +6,15 @@ export type Cell = {
     isOpened: boolean,
     hasFlag: boolean,
     hasMine: boolean,
+    isDown: boolean,
     neighborMineCount: number
 }
+
+export let numOfBombs = 0
+const setNumOfBombs = (num: number) => {
+    numOfBombs = num
+}
+
 
 export const initBoard = (numRows: number, numCols: number): Cell[][] => {
     console.log("Initializing Board")
@@ -26,7 +33,7 @@ export const initBoard = (numRows: number, numCols: number): Cell[][] => {
     for(let i = 0; i < numRows; i++){
         cells.push([])
         for(let j = 0; j < numCols; j++){
-            cells[i].push({row: i, col: j, isOpened: false, hasFlag: false, hasMine: cellValues[i][j] < 0 ? true : false, neighborMineCount: cellValues[i][j]})
+            cells[i].push({row: i, col: j, isOpened: false, hasFlag: false, hasMine: cellValues[i][j] < 0 ? true : false, isDown: false, neighborMineCount: cellValues[i][j]})
         }
     }
 
@@ -34,8 +41,9 @@ export const initBoard = (numRows: number, numCols: number): Cell[][] => {
 }
 
 const addBombs = (arr: number[][]): number[][] => {
-    let probOfBomb = 1/10
+    let probOfBomb = 0.20625
     let numOfBombs = 0
+    /*
     for(let i = 0; i <arr.length; i++){
         for(let j = 0; j < arr[i].length; j++){
             let rndNum = Math.random()
@@ -93,7 +101,66 @@ const addBombs = (arr: number[][]): number[][] => {
             }
         }
     }
+    */
+
+    for(let i = 0; i <arr.length; i++){
+        for(let j = 0; j < arr[i].length; j++){
+            let rndNum = Math.random()
+            if(rndNum < probOfBomb){
+                arr[i][j] = -100
+
+                if(i === 0){
+                    if(j - 1 >= 0){
+                        arr[i][j - 1] += 1
+                        arr[i + 1][j - 1] += 1
+                    } 
+                    if(j + 1 < numCols){
+                        arr[i][j + 1] += 1
+                        arr[i + 1][j + 1] += 1
+                    }
+                    
+                    arr[i + 1][j] += 1
+                    
+                } else if(i === numRows - 1){
+                    if(j - 1 >= 0){
+                        arr[i][j - 1] += 1
+                        arr[i - 1][j - 1] += 1
+                    } 
+                    if(j + 1 < numCols){
+                        arr[i][j + 1] += 1
+                        arr[i - 1][j + 1] += 1
+                    }
+                    
+                    arr[i - 1][j] += 1
+                } else if(j === 0 && i >= 0 && i < numRows){
+                    arr[i + 1][j] += 1
+                    arr[i + 1][j + 1] += 1
+                    arr[i][j + 1] += 1
+                    arr[i - 1][j] += 1
+                    arr[i - 1][j + 1] += 1
+                
+                } else if(j === numCols - 1 && i >= 0 && i < numRows){
+                    arr[i + 1][j] += 1
+                    arr[i + 1][j - 1] += 1
+                    arr[i][j - 1] += 1
+                    arr[i - 1][j] += 1
+                    arr[i - 1][j - 1] += 1
+                } else {
+                    arr[i - 1][j - 1] += 1
+                    arr[i - 1][j] += 1
+                    arr[i - 1][j + 1] += 1
+                    arr[i][j - 1] += 1
+                    arr[i][j + 1] += 1
+                    arr[i + 1][j - 1] += 1
+                    arr[i + 1][j] += 1
+                    arr[i + 1][j + 1] += 1
+                }
+                numOfBombs += 1
+            }
+        }
+    }
     //console.log(numOfBombs)
+    setNumOfBombs(numOfBombs)
     return arr
 }
 
@@ -114,3 +181,4 @@ export const findNeighbors = (cellsArr: Cell[][], i: number, j: number) => {
     }
     return neighbors
   }
+
