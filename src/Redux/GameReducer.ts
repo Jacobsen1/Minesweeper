@@ -34,7 +34,6 @@ export const GameReducer = (state = initialState, actions: GameActions): GameSta
             draft.gameState = "game over"
             draft.menuIsOpen = true
             gameOver(draft.cells)
-
           }
           if (state.cells[i][j].neighborMineCount > 0) {
             draft.cells[i][j].isOpened = true
@@ -64,7 +63,6 @@ export const GameReducer = (state = initialState, actions: GameActions): GameSta
                   draft.gameState = "game over"
                   draft.menuIsOpen = true
                   gameOver(draft.cells)
-
                 }
               })
             } else if (numFlags > state.cells[i][j].neighborMineCount) {
@@ -132,6 +130,11 @@ export const GameReducer = (state = initialState, actions: GameActions): GameSta
     case GameActionTypes.ToggleMenu:
       return produce(state, (draft) => {
         draft.menuIsOpen = !draft.menuIsOpen
+      })
+
+    case GameActionTypes.SetGameState:
+      return produce(state, (draft) => {
+        draft.gameState = actions.payload.gameState
       })
 
     default:

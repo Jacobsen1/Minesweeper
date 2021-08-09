@@ -11,10 +11,11 @@ import { RootState, selectGameState } from "../Redux/GameReducer"
 
 const useStyles = makeStyles((theme) => ({
   cell: {
-    //position: "absolute",
-    //border: "2px solid gray",
-
+    fontSize: "35px",
     lineHeight: cellSize + "px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
 }))
 
@@ -33,35 +34,20 @@ export const CellComp = (props: CellProps) => {
       key={props.cell.row * props.cell.col + props.cell.col}
       className={classes.cell}
       style={{
-        backgroundColor:
-          props.cell.isOpened || props.cell.isDown ? "darkGray" : "lightGray",
-        boxShadow:
-          props.cell.isOpened || props.cell.isDown ? "1px 1px black inset" : "",
+        backgroundColor: props.cell.isOpened || props.cell.isDown ? "darkGray" : "lightGray",
+        boxShadow: props.cell.isOpened || props.cell.isDown ? "1px 1px black inset" : "",
 
-        borderLeft:
-          props.cell.isOpened || props.cell.isDown
-            ? ""
-            : borderSize + "px solid #e6e6e6",
-        borderTop:
-          props.cell.isOpened || props.cell.isDown
-            ? ""
-            : borderSize + "px solid #e6e6e6",
+        borderLeft: props.cell.isOpened || props.cell.isDown ? "" : borderSize + "px solid #e6e6e6",
+        borderTop: props.cell.isOpened || props.cell.isDown ? "" : borderSize + "px solid #e6e6e6",
         borderRight:
-          props.cell.isOpened || props.cell.isDown
-            ? ""
-            : borderSize + "px solid #808080",
+          props.cell.isOpened || props.cell.isDown ? "" : borderSize + "px solid #808080",
         borderBottom:
-          props.cell.isOpened || props.cell.isDown
-            ? ""
-            : borderSize + "px solid #808080",
+          props.cell.isOpened || props.cell.isDown ? "" : borderSize + "px solid #808080",
         width:
-          props.cell.isOpened || props.cell.isDown
-            ? cellSize + "px"
-            : cellSize - 2 * borderSize,
+          props.cell.isOpened || props.cell.isDown ? cellSize + "px" : cellSize - 2 * borderSize,
         height:
-          props.cell.isOpened || props.cell.isDown
-            ? cellSize + "px"
-            : cellSize - 2 * borderSize,
+          props.cell.isOpened || props.cell.isDown ? cellSize + "px" : cellSize - 2 * borderSize,
+        color: props.cell.textColor,
       }}
       //RIGHT CLICK
       onContextMenu={(e) => {
@@ -78,34 +64,30 @@ export const CellComp = (props: CellProps) => {
       }}
       onMouseDown={(e) => {
         if (e.button === 0 && gameState === "running") {
-          dispatch(
-            setIsDown({ i: props.cell.row, j: props.cell.col, isDown: true })
-          )
+          dispatch(setIsDown({ i: props.cell.row, j: props.cell.col, isDown: true }))
         }
       }}
       onMouseUp={(e) => {
         if (e.button === 0 && gameState === "running") {
-          dispatch(
-            setIsDown({ i: props.cell.row, j: props.cell.col, isDown: false })
-          )
+          dispatch(setIsDown({ i: props.cell.row, j: props.cell.col, isDown: false }))
         }
       }}
       onMouseLeave={(e) => {
         if (e.button === 0 && gameState === "running") {
-          dispatch(
-            setIsDown({ i: props.cell.row, j: props.cell.col, isDown: false })
-          )
+          dispatch(setIsDown({ i: props.cell.row, j: props.cell.col, isDown: false }))
         }
       }}
     >
       {props.cell.isOpened ? (
-        props.cell.neighborMineCount >= 0 ? (
+        props.cell.neighborMineCount > 0 ? (
           <span>{props.cell.neighborMineCount}</span>
+        ) : props.cell.neighborMineCount !== 0 ? (
+          <Icon icon={mineIcon} />
         ) : (
-          <Icon icon={mineIcon} style={{ marginTop: "17px" }} />
+          ""
         )
       ) : props.cell.hasFlag ? (
-        <Icon icon={flagIcon} style={{ marginBottom: "5px" }} />
+        <Icon icon={flagIcon} />
       ) : (
         ""
       )}

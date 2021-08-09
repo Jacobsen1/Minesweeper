@@ -11,6 +11,7 @@ export const TopBoard = (props: { bombsLeft: number; minutes: number; seconds: n
     <>
       <Grid item xs>
         <Typography variant="h5">
+          {"Time: "}
           {props.minutes > 9 ? props.minutes : "0" + props.minutes}:
           {props.seconds > 9 ? props.seconds : "0" + props.seconds}
         </Typography>
@@ -27,7 +28,7 @@ export const TopBoard = (props: { bombsLeft: number; minutes: number; seconds: n
         </Button>
       </Grid>
       <Grid item xs>
-        <Typography variant="h5">{props.bombsLeft}</Typography>
+        <Typography variant="h5">{"Bombs left: " + props.bombsLeft}</Typography>
       </Grid>
     </>
   )
