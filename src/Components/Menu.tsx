@@ -1,13 +1,33 @@
-import { Button, Card, CardContent, Grid, Typography } from "@material-ui/core"
+import {
+  Card,
+  CardContent,
+  Grid,
+  ListItem,
+  ListItemText,
+  makeStyles,
+  Typography,
+} from "@material-ui/core"
 import React from "react"
 import SentimentVeryDissatisfiedIcon from "@material-ui/icons/SentimentVeryDissatisfied"
 import { restartGame, toggleMenu } from "../Redux/GameActions"
-import { numCols, numOfBombs, numRows } from "../App"
+import { numCols, numOfBombs, numRows } from "./Game"
 import { useDispatch, useSelector } from "react-redux"
-import { RootState, selectMenuIsOpen } from "../Redux/GameReducer"
+import { RootState, selectGameState, selectMenuIsOpen } from "../Redux/GameReducer"
+import SentimentVerySatisfiedIcon from "@material-ui/icons/SentimentVerySatisfied"
 import Modal from "react-modal"
 Modal.setAppElement("#root")
 
+const useStyles = makeStyles(() => ({
+  restartButton: {
+    width: "90%",
+    marginTop: "25px",
+    backgroundColor: "#2c8fb5",
+    "&:hover": {
+      backgroundColor: "#2780a2",
+    },
+    textAlign: "center",
+  },
+}))
 const customStyles = {
   content: {
     width: "30vw",
@@ -24,28 +44,32 @@ const customStyles = {
 
 export const PopupMenu = () => {
   const dispatch = useDispatch()
-
+  const classes = useStyles()
   const menuIsOpen = useSelector<RootState, boolean>(selectMenuIsOpen)
+  const gameState = useSelector<RootState, string>(selectGameState)
 
   return (
     <Modal isOpen={menuIsOpen} style={customStyles} onRequestClose={() => dispatch(toggleMenu())}>
       <Card style={{ width: "100%", height: "100%", textAlign: "center" }}>
         <CardContent>
-          <Typography variant="h2">You Lost</Typography>
+          <Typography variant="h2">{gameState === "won" ? "You Win!" : "You Lost"}</Typography>
         </CardContent>
         <Grid container direction="column" justifyContent="center" alignItems="center">
-          <SentimentVeryDissatisfiedIcon style={{ width: "60%", height: "100%" }} />
+          {gameState === "won" ? (
+            <SentimentVerySatisfiedIcon style={{ width: "60%", height: "100%" }} />
+          ) : (
+            <SentimentVeryDissatisfiedIcon style={{ width: "60%", height: "100%" }} />
+          )}
 
-          <Button
-            variant="contained"
-            color="primary"
-            style={{ width: "90%" }}
+          <ListItem
+            button
+            className={classes.restartButton}
             onClick={() => {
               dispatch(restartGame({ numRows: numRows, numCols: numCols, numBombs: numOfBombs }))
             }}
           >
-            Restart Game
-          </Button>
+            <ListItemText primary="RESTART GAME" />
+          </ListItem>
         </Grid>
       </Card>
     </Modal>

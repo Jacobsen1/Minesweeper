@@ -1,6 +1,6 @@
 import { makeStyles } from "@material-ui/core"
 import React from "react"
-import { cellSize, borderSize } from "../App"
+import { cellSize, borderSize } from "./Game"
 import { Cell } from "../GameLogic"
 import { Icon } from "@iconify/react"
 import mineIcon from "@iconify-icons/mdi/mine"
@@ -34,7 +34,7 @@ export const CellComp = (props: CellProps) => {
       key={props.cell.row * props.cell.col + props.cell.col}
       className={classes.cell}
       style={{
-        backgroundColor: props.cell.isOpened || props.cell.isDown ? "darkGray" : "lightGray",
+        backgroundColor: props.cell.isOpened || props.cell.isDown ? "darkGray" : "#c7c7c7",
         boxShadow: props.cell.isOpened || props.cell.isDown ? "1px 1px black inset" : "",
 
         borderLeft: props.cell.isOpened || props.cell.isDown ? "" : borderSize + "px solid #e6e6e6",
@@ -47,7 +47,6 @@ export const CellComp = (props: CellProps) => {
           props.cell.isOpened || props.cell.isDown ? cellSize + "px" : cellSize - 2 * borderSize,
         height:
           props.cell.isOpened || props.cell.isDown ? cellSize + "px" : cellSize - 2 * borderSize,
-        color: props.cell.textColor,
       }}
       //RIGHT CLICK
       onContextMenu={(e) => {
@@ -80,7 +79,7 @@ export const CellComp = (props: CellProps) => {
     >
       {props.cell.isOpened ? (
         props.cell.neighborMineCount > 0 ? (
-          <span>{props.cell.neighborMineCount}</span>
+          <span style={{ color: props.cell.textColor }}>{props.cell.neighborMineCount}</span>
         ) : props.cell.neighborMineCount !== 0 ? (
           <Icon icon={mineIcon} />
         ) : (

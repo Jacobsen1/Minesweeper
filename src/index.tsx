@@ -9,8 +9,7 @@ import { GameReducer } from "./Redux/GameReducer"
 //STORE
 const store = createStore(
   GameReducer,
-  (window as any).__REDUX_DEVTOOLS_EXTENSION__ &&
-    (window as any).__REDUX_DEVTOOLS_EXTENSION__()
+  (window as any).__REDUX_DEVTOOLS_EXTENSION__ && (window as any).__REDUX_DEVTOOLS_EXTENSION__()
 )
 
 ReactDOM.render(

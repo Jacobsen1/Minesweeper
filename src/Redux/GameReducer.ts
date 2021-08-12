@@ -3,12 +3,13 @@ import { GameActions, GameActionTypes, GameState } from "./GameActions"
 import { Cell, findCellsToBeOpened, findNeighbors, gameOver, initBoard } from "../GameLogic"
 
 export const initialState: GameState = {
-  gameState: "",
+  gameState: "running",
   bombsLeft: 0,
   minutes: 0,
   seconds: 0,
   cells: [],
   menuIsOpen: false,
+  boardSize: -1,
 }
 
 export const GameReducer = (state = initialState, actions: GameActions): GameState => {
@@ -18,7 +19,6 @@ export const GameReducer = (state = initialState, actions: GameActions): GameSta
         let cells = initBoard(actions.payload.numRows, actions.payload.numCols)
         draft.cells = cells
         draft.bombsLeft = actions.payload.numBombs
-        draft.gameState = "running"
       })
 
     case GameActionTypes.LeftClick:
@@ -31,9 +31,9 @@ export const GameReducer = (state = initialState, actions: GameActions): GameSta
         ) {
           if (state.cells[i][j].hasMine) {
             draft.cells[i][j].isOpened = true
+            gameOver(draft.cells)
             draft.gameState = "game over"
             draft.menuIsOpen = true
-            gameOver(draft.cells)
           }
           if (state.cells[i][j].neighborMineCount > 0) {
             draft.cells[i][j].isOpened = true
@@ -60,15 +60,15 @@ export const GameReducer = (state = initialState, actions: GameActions): GameSta
                   }
                   draft.cells[element.row][element.col].isOpened = true
                 } else if (element.hasFlag && !element.hasMine) {
+                  gameOver(draft.cells)
                   draft.gameState = "game over"
                   draft.menuIsOpen = true
-                  gameOver(draft.cells)
                 }
               })
             } else if (numFlags > state.cells[i][j].neighborMineCount) {
+              gameOver(draft.cells)
               draft.gameState = "game over"
               draft.menuIsOpen = true
-              gameOver(draft.cells)
             }
           }
         }
@@ -137,6 +137,11 @@ export const GameReducer = (state = initialState, actions: GameActions): GameSta
         draft.gameState = actions.payload.gameState
       })
 
+    case GameActionTypes.SetBoardSize:
+      return produce(state, (draft) => {
+        draft.boardSize = actions.payload.boardSize
+      })
+
     default:
       return state
   }
@@ -149,3 +154,4 @@ export const selectMinutes = (state: RootState): number => state.minutes
 export const selectSeconds = (state: RootState): number => state.seconds
 export const selectCells = (state: RootState): Cell[][] => state.cells
 export const selectMenuIsOpen = (state: RootState): boolean => state.menuIsOpen
+export const selectBoardSize = (state: RootState): number => state.boardSize

@@ -9,6 +9,7 @@ export enum GameActionTypes {
   Tick = "tick",
   ToggleMenu = "toggleMenu",
   SetGameState = "setGameState",
+  SetBoardSize = "setBoardSize",
 }
 
 /* --------- TYPES ---------- */
@@ -19,6 +20,7 @@ export type GameState = {
   seconds: number
   cells: Cell[][]
   menuIsOpen: boolean
+  boardSize: number
 }
 
 type CellPayload = {
@@ -65,8 +67,12 @@ type ToggleMenuType = {
   type: GameActionTypes.ToggleMenu
 }
 type SetGameStateType = {
-  type: GameActionTypes.SetGameState,
+  type: GameActionTypes.SetGameState
   payload: GameStatePayload
+}
+type SetBoardSize = {
+  type: GameActionTypes.SetBoardSize
+  payload: {boardSize: number}
 }
 
 export type GameActions =
@@ -78,6 +84,7 @@ export type GameActions =
   | TickType
   | ToggleMenuType
   | SetGameStateType
+  | SetBoardSize
 
 /* -------- ACTIONS -------- */
 export const initGame = (payload: GamePayload) => ({
@@ -109,5 +116,9 @@ export const toggleMenu = () => ({
 })
 export const setGameState = (payload: GameStatePayload) => ({
   type: GameActionTypes.SetGameState,
+  payload,
+})
+export const setBoardSize = (payload: {boardSize: number}) => ({
+  type: GameActionTypes.SetBoardSize,
   payload,
 })

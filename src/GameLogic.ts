@@ -1,4 +1,4 @@
-import { numCols, numOfBombs, numRows } from "./App"
+import { numCols, numOfBombs, numRows } from "./Components/Game"
 
 export type Cell = {
   col: number
@@ -158,3 +158,20 @@ export const gameOver = (cells: Cell[][]) => {
     })
   })
 }
+
+export const checkIfWin = (cells: Cell[][]): boolean => {
+  let correct = 0
+  cells.forEach((row) => {
+    row.forEach((cell) => {
+      if (cell.hasFlag && cell.hasMine) {
+        correct++
+      }
+    })
+  })
+  if (correct === numOfBombs) {
+    return true
+  }
+  return false
+}
+
+
