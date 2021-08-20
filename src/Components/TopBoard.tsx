@@ -1,5 +1,4 @@
 import {
-  Button,
   Grid,
   List,
   ListItem,
@@ -53,6 +52,8 @@ export const TopBoard = () => {
         </Typography>
       </Grid>
       <Grid item xs={6}>
+
+        {/*<button onClick={() => dispatch(toggleMenu())}>ToggleMenu</button>*/}
         <List className={classes.topMenu}>
           <ListItem
             button

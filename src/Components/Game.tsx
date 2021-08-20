@@ -4,7 +4,7 @@ import { Cell, checkIfWin } from "../GameLogic"
 import { GameState, initGame, setGameState, tick, toggleMenu } from "../Redux/GameActions"
 import { RootState, selectBombsLeft, selectCells, selectGameState } from "../Redux/GameReducer"
 import { Board } from "./Board"
-import { PopupMenu } from "./Menu"
+import { PopupMenu } from "./PopupMenu"
 import { TopBoard, useInterval } from "./TopBoard"
 
 export let width = 0
@@ -45,7 +45,6 @@ export const Game = () => {
     borderSize = Math.ceil(cellSize * 0.15)
     numOfBombs = Math.floor(0.15 * numRows * numCols)
     dispatch(initGame({ numRows: numRows, numCols: numCols, numBombs: numOfBombs }))
-    console.log("Board initialized")
   }, [dispatch, boardSize])
 
   useInterval(() => {
@@ -54,7 +53,6 @@ export const Game = () => {
       if (checkIfWin(cells)) {
         dispatch(setGameState({ gameState: "won" }))
         dispatch(toggleMenu())
-        //alert("YOU WON!")
       }
     }
   }, 1000)

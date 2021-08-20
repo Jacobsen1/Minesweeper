@@ -5,22 +5,25 @@ import {
   ListItem,
   ListItemText,
   makeStyles,
+  TextField,
   Typography,
 } from "@material-ui/core"
-import React from "react"
+import React, { useState } from "react"
 import SentimentVeryDissatisfiedIcon from "@material-ui/icons/SentimentVeryDissatisfied"
 import { restartGame, toggleMenu } from "../Redux/GameActions"
 import { numCols, numOfBombs, numRows } from "./Game"
 import { useDispatch, useSelector } from "react-redux"
-import { RootState, selectGameState, selectMenuIsOpen } from "../Redux/GameReducer"
+import { RootState, selectBoardSize, selectGameState, selectMenuIsOpen, selectMinutes, selectSeconds } from "../Redux/GameReducer"
 import SentimentVerySatisfiedIcon from "@material-ui/icons/SentimentVerySatisfied"
 import Modal from "react-modal"
+import { newHighscore } from "../server/axios"
 Modal.setAppElement("#root")
 
 const useStyles = makeStyles(() => ({
   restartButton: {
     width: "90%",
-    marginTop: "25px",
+    marginTop: "20px",
+    height: "56px",
     backgroundColor: "#2c8fb5",
     "&:hover": {
       backgroundColor: "#2780a2",
@@ -31,7 +34,8 @@ const useStyles = makeStyles(() => ({
 const customStyles = {
   content: {
     width: "30vw",
-    height: "50vh",
+    maxWidth: "500px",
+    height: "60vh",
     top: "50%",
     left: "50%",
     right: "auto",
@@ -47,6 +51,12 @@ export const PopupMenu = () => {
   const classes = useStyles()
   const menuIsOpen = useSelector<RootState, boolean>(selectMenuIsOpen)
   const gameState = useSelector<RootState, string>(selectGameState)
+  const minutes = useSelector<RootState, number>(selectMinutes)
+  const seconds = useSelector<RootState, number>(selectSeconds)
+  const boardSize = useSelector<RootState, number>(selectBoardSize)
+  const [username, setUsername] = useState('')
+  const [helperText, setHelperText] = useState('')
+
 
   return (
     <Modal isOpen={menuIsOpen} style={customStyles} onRequestClose={() => dispatch(toggleMenu())}>
@@ -60,15 +70,33 @@ export const PopupMenu = () => {
           ) : (
             <SentimentVeryDissatisfiedIcon style={{ width: "60%", height: "100%" }} />
           )}
+          {gameState === "won" ? (
+            <TextField onChange={(e) => setUsername(e.target.value)} required autoFocus style={{ width: "90%" }} id="outlined-basic" label="Username" variant="outlined" helperText={helperText} />
+          ) : ''}
+
 
           <ListItem
             button
             className={classes.restartButton}
             onClick={() => {
-              dispatch(restartGame({ numRows: numRows, numCols: numCols, numBombs: numOfBombs }))
+              if (username.length > 0 && username.length < 16) {
+                newHighscore({ name: username, score: (minutes > 9 ? minutes.toString() : "0" + minutes.toString()) + ":" + (seconds > 9 ? seconds.toString() : "0" + seconds), gametype: boardSize }).then((response: any) => {
+                  if (response.Status === 200) {
+                    dispatch(restartGame({ numRows: numRows, numCols: numCols, numBombs: numOfBombs }))
+                    setHelperText("")
+                    setUsername("")
+                  } else {
+                    console.error(response.Status, response.Text)
+                  }
+                }).catch((error: any) => {
+                  console.log(error)
+                })
+              } else {
+                setHelperText("Length must be between 0 and 16")
+              }
             }}
           >
-            <ListItemText primary="RESTART GAME" />
+            <ListItemText primary="SUBMIT" />
           </ListItem>
         </Grid>
       </Card>

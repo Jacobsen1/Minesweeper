@@ -1,18 +1,21 @@
 import {
   Card,
   CardContent,
-  Collapse,
   Divider,
   Grid,
+  IconButton,
   List,
   ListItem,
   ListItemText,
   makeStyles,
   Typography,
-} from "@material-ui/core"
-import React, { useState } from "react"
-import { useDispatch } from "react-redux"
-import { setBoardSize, setGameState } from "../Redux/GameActions"
+} from "@material-ui/core";
+import React, { useEffect, useState } from "react";
+import { getHighscores } from "../server/axios";
+import ArrowBackIcon from "@material-ui/icons/ArrowBack";
+import { Highscore } from "../GameLogic";
+import { HighscoreList } from "./HighscoreList";
+import { CollapseMenu } from "./CollapseMenu";
 
 const useStyles = makeStyles((theme) => ({
   startMenuWrapper: {
@@ -27,6 +30,7 @@ const useStyles = makeStyles((theme) => ({
     height: "50vh",
     padding: "20px  ",
     backgroundColor: "#e3e3e3",
+    position: "relative",
   },
   menuText: {
     textAlign: "center",
@@ -38,86 +42,105 @@ const useStyles = makeStyles((theme) => ({
       backgroundColor: "#2780a2",
     },
   },
-  innerMenuButton: {
-    backgroundColor: "#ffc3a6",
-    "&:hover": {
-      backgroundColor: "#ffa67b",
-    },
+  backArrow: {
+    position: "absolute",
+    left: "0",
+    top: "0",
   },
-}))
+}));
 
 export const StartMenu = () => {
-  const classes = useStyles()
-  const dispatch = useDispatch()
-  const [open, setOpen] = useState(false)
+  const classes = useStyles();
+
+  const [playMenuOpen, setPlayMenuOpen] = useState(false);
+  const [highscoreMenuOpen, setHighscoreMenuOpen] = useState(false);
+  const [showHighscore, setShowHighscore] = useState(false);
+
+  const [highscore, setHighscore] = useState<Highscore[]>([]);
+  const [highscoreType, setHighscoreType] = useState<number>(0)
+
+  useEffect(() => {
+    if (highscoreType > 0) {
+      getHighscores(highscoreType).then((res: Highscore[]) => {
+        setHighscore(res);
+      });
+    }
+  }, [highscoreType]);
+
   return (
     <div className={classes.startMenuWrapper}>
       <Card className={classes.startMenu}>
+        {showHighscore ? (
+          <IconButton
+            className={classes.backArrow}
+            onClick={() => setShowHighscore(false)}
+          >
+            <ArrowBackIcon />
+          </IconButton>
+        ) : (
+          ""
+        )}
         <CardContent>
-          <Grid container direction="column" justifyContent="center" alignItems="center">
-            <Typography variant="h2">Minesweeper</Typography>
-            <List style={{ width: "100%" }}>
-              <ListItem
-                button
-                className={classes.menuButton}
-                onClick={() => {
-                  setOpen(!open)
-                }}
-              >
-                <ListItemText
-                  primary="PLAY"
-                  className={classes.menuText}
-                  primaryTypographyProps={{ variant: "h5" }}
-                />
-              </ListItem>
-              <Divider />
-              <Collapse in={open} timeout="auto" unmountOnExit>
-                <List component="div" disablePadding>
+          <Grid
+            container
+            direction="column"
+            justifyContent="center"
+            alignItems="center"
+          >
+            <Typography
+              variant="h2"
+              style={{ marginBottom: "10px", marginTop: "-10px" }}
+            >
+              {showHighscore ? "Highscores" : "Minesweeper"}
+            </Typography>
+            <List
+              style={{ width: "100%", maxHeight: "384px", overflow: "auto" }}
+              disablePadding
+            >
+              {showHighscore ? (
+                <HighscoreList highscores={highscore} />
+              ) : (
+                <>
                   <ListItem
                     button
-                    className={classes.innerMenuButton}
+                    className={classes.menuButton}
                     onClick={() => {
-                      dispatch(setBoardSize({ boardSize: 1 }))
-                      dispatch(setGameState({ gameState: "running" }))
+                      setPlayMenuOpen(!playMenuOpen);
+                      setHighscoreMenuOpen(false)
                     }}
                   >
-                    <ListItemText primary="16 x 30" className={classes.menuText} />
+                    <ListItemText
+                      primary="PLAY"
+                      className={classes.menuText}
+                      primaryTypographyProps={{ variant: "h5" }}
+                    />
                   </ListItem>
+                  <Divider />
+                  <CollapseMenu open={playMenuOpen} menuType={1} setShowHighscore={setShowHighscore} setHighscoreType={setHighscoreType} />
+                  <Divider />
                   <ListItem
                     button
-                    className={classes.innerMenuButton}
+                    className={classes.menuButton}
                     onClick={() => {
-                      dispatch(setBoardSize({ boardSize: 2 }))
-                      dispatch(setGameState({ gameState: "running" }))
+                      setHighscoreMenuOpen(!highscoreMenuOpen)
+                      setPlayMenuOpen(false)
                     }}
                   >
-                    <ListItemText primary="16 x 16" className={classes.menuText} />
+                    <ListItemText
+                      primary="HIGHSCORES"
+                      className={classes.menuText}
+                      primaryTypographyProps={{ variant: "h5" }}
+                    />
                   </ListItem>
-                  <ListItem
-                    button
-                    className={classes.innerMenuButton}
-                    onClick={() => {
-                      dispatch(setBoardSize({ boardSize: 3 }))
-                      dispatch(setGameState({ gameState: "running" }))
-                    }}
-                  >
-                    <ListItemText primary="10 x 10" className={classes.menuText} />
-                  </ListItem>
-                </List>
-              </Collapse>
-              <Divider />
-
-              <ListItem button className={classes.menuButton}>
-                <ListItemText
-                  primary="HIGHSCORES"
-                  className={classes.menuText}
-                  primaryTypographyProps={{ variant: "h5" }}
-                />
-              </ListItem>
+                  <Divider />
+                  <CollapseMenu open={highscoreMenuOpen} menuType={2} setShowHighscore={setShowHighscore} setHighscoreType={setHighscoreType} />
+                  <Divider />
+                </>
+              )}
             </List>
           </Grid>
         </CardContent>
       </Card>
     </div>
-  )
-}
+  );
+};
