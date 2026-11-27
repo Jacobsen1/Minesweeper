@@ -1,10 +1,14 @@
 import { configureStore } from "@reduxjs/toolkit"
-import { GameReducer } from "./GameReducer"
+import { useDispatch, useSelector, useStore } from "react-redux"
+import { gameReducer } from "./gameSlice"
 
-// configureStore replaces the deprecated `createStore` from Redux 5 and
-// wires up the Redux DevTools extension automatically.
 export const store = configureStore({
-  reducer: GameReducer,
+  reducer: gameReducer,
 })
 
+export type RootState = ReturnType<typeof store.getState>
 export type AppDispatch = typeof store.dispatch
+
+export const useAppSelector = useSelector.withTypes<RootState>()
+export const useAppDispatch = useDispatch.withTypes<AppDispatch>()
+export const useAppStore = useStore.withTypes<typeof store>()

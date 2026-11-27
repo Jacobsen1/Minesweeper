@@ -2,7 +2,6 @@ import express from "express"
 import mysql from "mysql2"
 
 const app = express()
-// Express 5 ships its own JSON body parser; body-parser is no longer needed.
 app.use(express.json())
 
 const port = Number(process.env.PORT ?? 3001)
@@ -13,8 +12,6 @@ app.use(function (req, res, next) {
   next()
 })
 
-// mysql2 is the maintained successor of the `mysql` driver and supports
-// MySQL 8's default caching_sha2_password authentication.
 const con = mysql.createConnection({
   host: process.env.DB_HOST ?? "localhost",
   user: process.env.DB_USER ?? "root",

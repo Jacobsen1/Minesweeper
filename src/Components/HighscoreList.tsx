@@ -1,40 +1,22 @@
 import { ListItem, ListItemText } from "@mui/material"
-import { Highscore } from "../GameLogic"
+import { Highscore } from "../api"
+import { blueButtonSx, peachButtonSx } from "./styles"
 
-const menuTextSx = {
-  textAlign: "center",
-  width: "50%",
-}
+const Column = ({ text, variant }: { text: string; variant: "h5" | "h6" }) => (
+  <ListItemText primary={text} sx={{ textAlign: "center", width: "50%" }} slotProps={{ primary: { variant } }} />
+)
 
-export const HighscoreList = (props: { highscores: Highscore[] }) => {
-  return (
-    <>
-      <ListItem
-        sx={{
-          backgroundColor: "#2c8fb5",
-          "&:hover": {
-            backgroundColor: "#2780a2",
-          },
-        }}
-      >
-        <ListItemText primary="Username" sx={menuTextSx} slotProps={{ primary: { variant: "h5" } }} />
-        <ListItemText primary="Score" sx={menuTextSx} slotProps={{ primary: { variant: "h5" } }} />
+export const HighscoreList = ({ highscores }: { highscores: Highscore[] }) => (
+  <>
+    <ListItem sx={blueButtonSx}>
+      <Column text="Username" variant="h5" />
+      <Column text="Score" variant="h5" />
+    </ListItem>
+    {highscores.map((row, i) => (
+      <ListItem key={i} data-testid="highscore-row" sx={peachButtonSx}>
+        <Column text={row.name} variant="h6" />
+        <Column text={row.score} variant="h6" />
       </ListItem>
-      {props.highscores.map((row, i) => (
-        <ListItem
-          key={i}
-          data-testid="highscore-row"
-          sx={{
-            backgroundColor: "#ffc3a6",
-            "&:hover": {
-              backgroundColor: "#ffa67b",
-            },
-          }}
-        >
-          <ListItemText primary={row.name} sx={menuTextSx} slotProps={{ primary: { variant: "h6" } }} />
-          <ListItemText primary={row.score} sx={menuTextSx} slotProps={{ primary: { variant: "h6" } }} />
-        </ListItem>
-      ))}
-    </>
-  )
-}
+    ))}
+  </>
+)

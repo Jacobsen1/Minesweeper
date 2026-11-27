@@ -1,22 +1,13 @@
 import { test as base, expect, type Page } from "@playwright/test"
+import type { Highscore } from "../src/api"
+import { BOARD_SIZES, getBoardGeometry } from "../src/GameLogic"
 
 export const API_URL = "http://localhost:3001"
 
-export type Highscore = { name: string; score: string; gametype: number }
+export type BoardLabel = "16 x 30" | "16 x 16" | "10 x 10"
 
-export const BOARD_SIZES = {
-  "16 x 30": { rows: 16, cols: 30 },
-  "16 x 16": { rows: 16, cols: 16 },
-  "10 x 10": { rows: 10, cols: 10 },
-} as const
-
-export type BoardLabel = keyof typeof BOARD_SIZES
-
-/** Number of mines the game places on a board (see Game.tsx). */
-export const mineCount = (label: BoardLabel) => {
-  const { rows, cols } = BOARD_SIZES[label]
-  return Math.floor(0.15 * rows * cols)
-}
+/** Rows, columns and mine count for a board, taken from the app's own board table. */
+export const boardGeometry = (label: BoardLabel) => getBoardGeometry(BOARD_SIZES.find((b) => b.label === label)!.id)
 
 type Fixtures = {
   /** In-memory store backing the mocked highscore API. */
@@ -56,6 +47,12 @@ export { expect }
 
 export const cell = (page: Page, row: number, col: number) => page.getByTestId(`cell-${row}-${col}`)
 
+/** All board cells, optionally filtered on whether they are opened. */
+export const cells = (page: Page, opened?: boolean) =>
+  opened === undefined
+    ? page.getByTestId(/^cell-/)
+    : page.locator(`[data-testid^="cell-"][data-opened="${opened}"]`)
+
 /**
  * Expand the PLAY or HIGHSCORES sub-menu and wait for its MUI Collapse animation to
  * finish, otherwise clicks can land while the options are still moving.
@@ -65,36 +62,27 @@ export async function openMenu(page: Page, name: "PLAY" | "HIGHSCORES") {
   await expect(page.locator(".MuiCollapse-entered")).toHaveCount(1)
 }
 
-/** Open the PLAY menu and start a game with the given board size. */
-export async function startGame(page: Page, label: BoardLabel) {
-  await openMenu(page, "PLAY")
-  await page.getByRole("button", { name: label }).click()
-  const { rows, cols } = BOARD_SIZES[label]
-  await expect(page.getByTestId(/^cell-/)).toHaveCount(rows * cols)
-}
-
 /**
- * Start a game where the mines are placed at known positions.
- *
- * The game places mines by drawing `Math.random()` twice per mine (row, then column).
- * We feed it a queue of values that map to the requested cells, then fall back to the
- * real implementation once the queue is drained.
+ * Start a game with the given board size. When `mines` is given, the mines are placed
+ * at those positions: the game draws `Math.random()` twice per mine (row, then column),
+ * so we feed it a matching queue and fall back to the real implementation afterwards.
  */
-export async function startGameWithMines(page: Page, label: BoardLabel, mines: Array<[number, number]>) {
-  const { rows, cols } = BOARD_SIZES[label]
-  if (mines.length !== mineCount(label)) {
-    throw new Error(`${label} needs exactly ${mineCount(label)} mines, got ${mines.length}`)
-  }
-  const queue = mines.flatMap(([r, c]) => [(r + 0.5) / rows, (c + 0.5) / cols])
-
+export async function startGame(page: Page, label: BoardLabel, mines?: Array<[number, number]>) {
+  const { numRows, numCols, numBombs } = boardGeometry(label)
   await openMenu(page, "PLAY")
-  await page.evaluate((values) => {
-    const original = Math.random
-    const pending = [...values]
-    Math.random = () => (pending.length > 0 ? pending.shift()! : original())
-  }, queue)
+  if (mines) {
+    if (mines.length !== numBombs) {
+      throw new Error(`${label} needs exactly ${numBombs} mines, got ${mines.length}`)
+    }
+    const queue = mines.flatMap(([r, c]) => [(r + 0.5) / numRows, (c + 0.5) / numCols])
+    await page.evaluate((values) => {
+      const original = Math.random
+      const pending = [...values]
+      Math.random = () => (pending.length > 0 ? pending.shift()! : original())
+    }, queue)
+  }
   await page.getByRole("button", { name: label }).click()
-  await expect(page.getByTestId(/^cell-/)).toHaveCount(rows * cols)
+  await expect(cells(page)).toHaveCount(numRows * numCols)
 }
 
 /** 15 mines for a 10 x 10 board: the whole first row and the first half of the second row. */
@@ -102,3 +90,15 @@ export const TOP_ROWS_MINES: Array<[number, number]> = [
   ...Array.from({ length: 10 }, (_, c) => [0, c] as [number, number]),
   ...Array.from({ length: 5 }, (_, c) => [1, c] as [number, number]),
 ]
+
+/** Start a 10 x 10 game with TOP_ROWS_MINES, flag every mine and return the win dialog. */
+export async function winGame(page: Page) {
+  await startGame(page, "10 x 10", TOP_ROWS_MINES)
+  for (const [r, c] of TOP_ROWS_MINES) {
+    await cell(page, r, c).click({ button: "right" })
+  }
+  await expect(page.getByTestId("bombs-left")).toHaveText("Bombs left: 0")
+  const dialog = page.getByRole("dialog")
+  await expect(dialog.getByRole("heading", { name: "You Win!" })).toBeVisible({ timeout: 5_000 })
+  return dialog
+}

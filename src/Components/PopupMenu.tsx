@@ -2,19 +2,20 @@ import { Card, CardContent, Stack, ListItemButton, ListItemText, TextField, Typo
 import { useState } from "react"
 import SentimentVeryDissatisfiedIcon from "@mui/icons-material/SentimentVeryDissatisfied"
 import SentimentVerySatisfiedIcon from "@mui/icons-material/SentimentVerySatisfied"
-import { restartGame, toggleMenu } from "../Redux/GameActions"
-import { numCols, numOfBombs, numRows } from "./Game"
-import { useDispatch, useSelector } from "react-redux"
+import Modal from "react-modal"
+import { newHighscore } from "../api"
+import { formatTime } from "../GameLogic"
 import {
-  RootState,
+  restartGame,
   selectBoardSize,
   selectGameState,
   selectMenuIsOpen,
   selectMinutes,
   selectSeconds,
-} from "../Redux/GameReducer"
-import Modal from "react-modal"
-import { newHighscore } from "../server/axios"
+  toggleMenu,
+} from "../Redux/gameSlice"
+import { useAppDispatch, useAppSelector, useAppStore } from "../Redux/store"
+import { blueButtonSx } from "./styles"
 Modal.setAppElement("#root")
 
 const customStyles = {
@@ -32,29 +33,60 @@ const customStyles = {
   },
 }
 
+const iconStyle = { width: "60%", height: "100%" }
+
+const submitButtonSx = {
+  ...blueButtonSx,
+  width: "90%",
+  flexGrow: 0,
+  marginTop: "20px",
+  height: "56px",
+  textAlign: "center",
+}
+
 export const PopupMenu = () => {
-  const dispatch = useDispatch()
-  const menuIsOpen = useSelector<RootState, boolean>(selectMenuIsOpen)
-  const gameState = useSelector<RootState, string>(selectGameState)
-  const minutes = useSelector<RootState, number>(selectMinutes)
-  const seconds = useSelector<RootState, number>(selectSeconds)
-  const boardSize = useSelector<RootState, number>(selectBoardSize)
+  const dispatch = useAppDispatch()
+  const store = useAppStore()
+  const menuIsOpen = useAppSelector(selectMenuIsOpen)
+  const won = useAppSelector(selectGameState) === "won"
   const [username, setUsername] = useState("")
   const [helperText, setHelperText] = useState("")
+
+  const submit = () => {
+    if (!(username.length > 0 && username.length < 16)) {
+      setHelperText("Length must be between 0 and 16")
+      return
+    }
+    // Read the time when submitting instead of re-rendering the popup on every tick.
+    const state = store.getState()
+    newHighscore({
+      name: username,
+      score: formatTime(selectMinutes(state), selectSeconds(state)),
+      gametype: selectBoardSize(state),
+    })
+      .then((response) => {
+        if (response.Status === 200) {
+          dispatch(restartGame())
+          setHelperText("")
+          setUsername("")
+        } else {
+          console.error(response.Status, response.Text)
+        }
+      })
+      .catch((error) => {
+        console.log(error)
+      })
+  }
 
   return (
     <Modal isOpen={menuIsOpen} style={customStyles} onRequestClose={() => dispatch(toggleMenu())}>
       <Card style={{ width: "100%", height: "100%", textAlign: "center" }}>
         <CardContent>
-          <Typography variant="h2">{gameState === "won" ? "You Win!" : "You Lost"}</Typography>
+          <Typography variant="h2">{won ? "You Win!" : "You Lost"}</Typography>
         </CardContent>
         <Stack direction="column" sx={{ justifyContent: "center", alignItems: "center" }}>
-          {gameState === "won" ? (
-            <SentimentVerySatisfiedIcon style={{ width: "60%", height: "100%" }} />
-          ) : (
-            <SentimentVeryDissatisfiedIcon style={{ width: "60%", height: "100%" }} />
-          )}
-          {gameState === "won" ? (
+          {won ? <SentimentVerySatisfiedIcon style={iconStyle} /> : <SentimentVeryDissatisfiedIcon style={iconStyle} />}
+          {won && (
             <TextField
               onChange={(e) => setUsername(e.target.value)}
               required
@@ -65,49 +97,9 @@ export const PopupMenu = () => {
               variant="outlined"
               helperText={helperText}
             />
-          ) : (
-            ""
           )}
 
-          <ListItemButton
-            sx={{
-              width: "90%",
-              flexGrow: 0,
-              marginTop: "20px",
-              height: "56px",
-              backgroundColor: "#2c8fb5",
-              "&:hover": {
-                backgroundColor: "#2780a2",
-              },
-              textAlign: "center",
-            }}
-            onClick={() => {
-              if (username.length > 0 && username.length < 16) {
-                newHighscore({
-                  name: username,
-                  score:
-                    (minutes > 9 ? minutes.toString() : "0" + minutes.toString()) +
-                    ":" +
-                    (seconds > 9 ? seconds.toString() : "0" + seconds),
-                  gametype: boardSize,
-                })
-                  .then((response: any) => {
-                    if (response.Status === 200) {
-                      dispatch(restartGame({ numRows: numRows, numCols: numCols, numBombs: numOfBombs }))
-                      setHelperText("")
-                      setUsername("")
-                    } else {
-                      console.error(response.Status, response.Text)
-                    }
-                  })
-                  .catch((error: any) => {
-                    console.log(error)
-                  })
-              } else {
-                setHelperText("Length must be between 0 and 16")
-              }
-            }}
-          >
+          <ListItemButton sx={submitButtonSx} onClick={submit}>
             <ListItemText primary="SUBMIT" />
           </ListItemButton>
         </Stack>

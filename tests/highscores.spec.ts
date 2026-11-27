@@ -1,15 +1,4 @@
-import { test, expect, cell, openMenu, startGameWithMines, TOP_ROWS_MINES } from "./fixtures"
-import type { Page } from "@playwright/test"
-
-async function winGame(page: Page) {
-  await startGameWithMines(page, "10 x 10", TOP_ROWS_MINES)
-  for (const [r, c] of TOP_ROWS_MINES) {
-    await cell(page, r, c).click({ button: "right" })
-  }
-  const dialog = page.getByRole("dialog")
-  await expect(dialog.getByRole("heading", { name: "You Win!" })).toBeVisible({ timeout: 5_000 })
-  return dialog
-}
+import { test, expect, cells, openMenu, winGame, API_URL } from "./fixtures"
 
 test.describe("Highscores", () => {
   test.beforeEach(async ({ page }) => {
@@ -32,8 +21,8 @@ test.describe("Highscores", () => {
   })
 
   test("shows an empty list when the API is unavailable", async ({ page }) => {
-    await page.unroute("http://localhost:3001/highscore**")
-    await page.route("http://localhost:3001/highscore**", (route) => route.abort())
+    await page.unroute(`${API_URL}/highscore**`)
+    await page.route(`${API_URL}/highscore**`, (route) => route.abort())
 
     await openMenu(page, "HIGHSCORES")
     await page.getByRole("button", { name: "16 x 16" }).click()
@@ -60,7 +49,7 @@ test.describe("Highscores", () => {
 
     // A fresh game is running.
     await expect(page.getByTestId("bombs-left")).toHaveText("Bombs left: 15")
-    await expect(page.locator('[data-testid^="cell-"][data-opened="true"]')).toHaveCount(0)
+    await expect(cells(page, true)).toHaveCount(0)
 
     // The new score shows up in the highscore list.
     await page.getByRole("button", { name: "MENU" }).click()

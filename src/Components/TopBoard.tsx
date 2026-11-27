@@ -1,26 +1,22 @@
 import { Grid, List, ListItemButton, ListItemText, Typography } from "@mui/material"
-import { useEffect, useRef } from "react"
-import { useDispatch, useSelector } from "react-redux"
-import { numCols, numOfBombs, numRows } from "./Game"
-import { restartGame, setGameState } from "../Redux/GameActions"
-import { RootState, selectBombsLeft, selectMinutes, selectSeconds } from "../Redux/GameReducer"
+import { formatTime } from "../GameLogic"
+import { restartGame, selectBombsLeft, selectMinutes, selectSeconds, setGameState } from "../Redux/gameSlice"
+import { useAppDispatch, useAppSelector } from "../Redux/store"
+import { greyButtonSx } from "./styles"
 
 const topButtonSx = {
+  ...greyButtonSx,
   margin: "4px",
-  backgroundColor: "#c7c7c7",
-  "&:hover": {
-    backgroundColor: "#b3b3b3",
-  },
   textAlign: "center",
   width: "130px",
   flexGrow: 0,
 }
 
 export const TopBoard = () => {
-  const dispatch = useDispatch()
-  const bombsLeft = useSelector<RootState, number>(selectBombsLeft)
-  const minutes = useSelector<RootState, number>(selectMinutes)
-  const seconds = useSelector<RootState, number>(selectSeconds)
+  const dispatch = useAppDispatch()
+  const bombsLeft = useAppSelector(selectBombsLeft)
+  const minutes = useAppSelector(selectMinutes)
+  const seconds = useAppSelector(selectSeconds)
 
   return (
     <Grid
@@ -31,26 +27,15 @@ export const TopBoard = () => {
     >
       <Grid size="grow">
         <Typography variant="h5" data-testid="timer">
-          {"Time: "}
-          {minutes > 9 ? minutes : "0" + minutes}:{seconds > 9 ? seconds : "0" + seconds}
+          {"Time: " + formatTime(minutes, seconds)}
         </Typography>
       </Grid>
       <Grid size={6}>
         <List sx={{ display: "flex", flexDirection: "row", padding: 0, justifyContent: "center" }}>
-          <ListItemButton
-            sx={topButtonSx}
-            onClick={() => {
-              dispatch(restartGame({ numRows: numRows, numCols: numCols, numBombs: numOfBombs }))
-            }}
-          >
+          <ListItemButton sx={topButtonSx} onClick={() => dispatch(restartGame())}>
             <ListItemText primary="RESTART" />
           </ListItemButton>
-          <ListItemButton
-            sx={topButtonSx}
-            onClick={() => {
-              dispatch(setGameState({ gameState: "startup" }))
-            }}
-          >
+          <ListItemButton sx={topButtonSx} onClick={() => dispatch(setGameState("startup"))}>
             <ListItemText primary="MENU" />
           </ListItemButton>
         </List>
@@ -62,22 +47,4 @@ export const TopBoard = () => {
       </Grid>
     </Grid>
   )
-}
-
-export function useInterval(callback: () => void, delay: number | null) {
-  const savedCallback = useRef(callback)
-
-  useEffect(() => {
-    savedCallback.current = callback
-  }, [callback])
-
-  useEffect(() => {
-    if (delay === null) {
-      return
-    }
-
-    const id = setInterval(() => savedCallback.current(), delay)
-
-    return () => clearInterval(id)
-  }, [delay])
 }
