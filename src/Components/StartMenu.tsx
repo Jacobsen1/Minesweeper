@@ -2,77 +2,67 @@ import {
   Card,
   CardContent,
   Divider,
-  Grid,
   IconButton,
   List,
-  ListItem,
+  Stack,
+  ListItemButton,
   ListItemText,
-  makeStyles,
   Typography,
-} from "@material-ui/core";
-import React, { useEffect, useState } from "react";
-import { getHighscores } from "../server/axios";
-import ArrowBackIcon from "@material-ui/icons/ArrowBack";
-import { Highscore } from "../GameLogic";
-import { HighscoreList } from "./HighscoreList";
-import { CollapseMenu } from "./CollapseMenu";
+} from "@mui/material"
+import { useEffect, useState } from "react"
+import { getHighscores } from "../server/axios"
+import ArrowBackIcon from "@mui/icons-material/ArrowBack"
+import { Highscore } from "../GameLogic"
+import { HighscoreList } from "./HighscoreList"
+import { CollapseMenu } from "./CollapseMenu"
 
-const useStyles = makeStyles((theme) => ({
-  startMenuWrapper: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    height: "100%",
-    backgroundImage: `url(` + process.env.PUBLIC_URL + `/minesweeperbg.jpg)`,
+const menuButtonSx = {
+  height: "70px",
+  backgroundColor: "#2c8fb5",
+  "&:hover": {
+    backgroundColor: "#2780a2",
   },
-  startMenu: {
-    width: "30vw",
-    height: "50vh",
-    padding: "20px  ",
-    backgroundColor: "#e3e3e3",
-    position: "relative",
-  },
-  menuText: {
-    textAlign: "center",
-  },
-  menuButton: {
-    height: "70px",
-    backgroundColor: "#2c8fb5",
-    "&:hover": {
-      backgroundColor: "#2780a2",
-    },
-  },
-  backArrow: {
-    position: "absolute",
-    left: "0",
-    top: "0",
-  },
-}));
+}
 
 export const StartMenu = () => {
-  const classes = useStyles();
+  const [playMenuOpen, setPlayMenuOpen] = useState(false)
+  const [highscoreMenuOpen, setHighscoreMenuOpen] = useState(false)
+  const [showHighscore, setShowHighscore] = useState(false)
 
-  const [playMenuOpen, setPlayMenuOpen] = useState(false);
-  const [highscoreMenuOpen, setHighscoreMenuOpen] = useState(false);
-  const [showHighscore, setShowHighscore] = useState(false);
-
-  const [highscore, setHighscore] = useState<Highscore[]>([]);
+  const [highscore, setHighscore] = useState<Highscore[]>([])
   const [highscoreType, setHighscoreType] = useState<number>(0)
 
   useEffect(() => {
     if (highscoreType > 0) {
       getHighscores(highscoreType).then((res: Highscore[]) => {
-        setHighscore(res);
-      });
+        setHighscore(res)
+      })
     }
-  }, [highscoreType]);
+  }, [highscoreType])
 
   return (
-    <div className={classes.startMenuWrapper}>
-      <Card className={classes.startMenu}>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100%",
+        backgroundImage: `url(${import.meta.env.BASE_URL}minesweeperbg.jpg)`,
+      }}
+    >
+      <Card
+        sx={{
+          width: "30vw",
+          height: "50vh",
+          padding: "20px  ",
+          backgroundColor: "#e3e3e3",
+          position: "relative",
+        }}
+      >
         {showHighscore ? (
           <IconButton
-            className={classes.backArrow}
+            aria-label="back"
+            sx={{ position: "absolute", left: "0", top: "0" }}
             onClick={() => setShowHighscore(false)}
           >
             <ArrowBackIcon />
@@ -81,46 +71,38 @@ export const StartMenu = () => {
           ""
         )}
         <CardContent>
-          <Grid
-            container
-            direction="column"
-            justifyContent="center"
-            alignItems="center"
-          >
-            <Typography
-              variant="h2"
-              style={{ marginBottom: "10px", marginTop: "-10px" }}
-            >
+          <Stack direction="column" sx={{ justifyContent: "center", alignItems: "center" }}>
+            <Typography variant="h2" style={{ marginBottom: "10px", marginTop: "-10px" }}>
               {showHighscore ? "Highscores" : "Minesweeper"}
             </Typography>
-            <List
-              style={{ width: "100%", maxHeight: "384px", overflow: "auto" }}
-              disablePadding
-            >
+            <List style={{ width: "100%", maxHeight: "384px", overflow: "auto" }} disablePadding>
               {showHighscore ? (
                 <HighscoreList highscores={highscore} />
               ) : (
                 <>
-                  <ListItem
-                    button
-                    className={classes.menuButton}
+                  <ListItemButton
+                    sx={menuButtonSx}
                     onClick={() => {
-                      setPlayMenuOpen(!playMenuOpen);
+                      setPlayMenuOpen(!playMenuOpen)
                       setHighscoreMenuOpen(false)
                     }}
                   >
                     <ListItemText
                       primary="PLAY"
-                      className={classes.menuText}
-                      primaryTypographyProps={{ variant: "h5" }}
+                      sx={{ textAlign: "center" }}
+                      slotProps={{ primary: { variant: "h5" } }}
                     />
-                  </ListItem>
+                  </ListItemButton>
                   <Divider />
-                  <CollapseMenu open={playMenuOpen} menuType={1} setShowHighscore={setShowHighscore} setHighscoreType={setHighscoreType} />
+                  <CollapseMenu
+                    open={playMenuOpen}
+                    menuType={1}
+                    setShowHighscore={setShowHighscore}
+                    setHighscoreType={setHighscoreType}
+                  />
                   <Divider />
-                  <ListItem
-                    button
-                    className={classes.menuButton}
+                  <ListItemButton
+                    sx={menuButtonSx}
                     onClick={() => {
                       setHighscoreMenuOpen(!highscoreMenuOpen)
                       setPlayMenuOpen(false)
@@ -128,19 +110,24 @@ export const StartMenu = () => {
                   >
                     <ListItemText
                       primary="HIGHSCORES"
-                      className={classes.menuText}
-                      primaryTypographyProps={{ variant: "h5" }}
+                      sx={{ textAlign: "center" }}
+                      slotProps={{ primary: { variant: "h5" } }}
                     />
-                  </ListItem>
+                  </ListItemButton>
                   <Divider />
-                  <CollapseMenu open={highscoreMenuOpen} menuType={2} setShowHighscore={setShowHighscore} setHighscoreType={setHighscoreType} />
+                  <CollapseMenu
+                    open={highscoreMenuOpen}
+                    menuType={2}
+                    setShowHighscore={setShowHighscore}
+                    setHighscoreType={setHighscoreType}
+                  />
                   <Divider />
                 </>
               )}
             </List>
-          </Grid>
+          </Stack>
         </CardContent>
       </Card>
     </div>
-  );
-};
+  )
+}

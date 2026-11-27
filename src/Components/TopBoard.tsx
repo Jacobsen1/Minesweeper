@@ -1,38 +1,23 @@
-import {
-  Grid,
-  List,
-  ListItem,
-  ListItemText,
-  makeStyles,
-  Typography,
-} from "@material-ui/core"
+import { Grid, List, ListItemButton, ListItemText, Typography } from "@mui/material"
 import { useEffect, useRef } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { numCols, numOfBombs, numRows } from "./Game"
 import { restartGame, setGameState } from "../Redux/GameActions"
 import { RootState, selectBombsLeft, selectMinutes, selectSeconds } from "../Redux/GameReducer"
 
-const useStyles = makeStyles(() => ({
-  topButtons: {
-    margin: "4px",
-    backgroundColor: "#c7c7c7",
-    "&:hover": {
-      backgroundColor: "#b3b3b3",
-    },
-    textAlign: "center",
-    width: "130px",
+const topButtonSx = {
+  margin: "4px",
+  backgroundColor: "#c7c7c7",
+  "&:hover": {
+    backgroundColor: "#b3b3b3",
   },
-  topMenu: {
-    display: "flex",
-    flexDirection: "row",
-    padding: 0,
-    justifyContent: "center",
-  },
-}))
+  textAlign: "center",
+  width: "130px",
+  flexGrow: 0,
+}
 
 export const TopBoard = () => {
   const dispatch = useDispatch()
-  const classes = useStyles()
   const bombsLeft = useSelector<RootState, number>(selectBombsLeft)
   const minutes = useSelector<RootState, number>(selectMinutes)
   const seconds = useSelector<RootState, number>(selectSeconds)
@@ -41,42 +26,39 @@ export const TopBoard = () => {
     <Grid
       container
       direction="row"
-      justifyContent="center"
-      alignItems="center"
+      sx={{ justifyContent: "center", alignItems: "center" }}
       style={{ backgroundColor: "#2c8fb5", padding: "20px 0 20px 0" }}
     >
-      <Grid item xs>
-        <Typography variant="h5">
+      <Grid size="grow">
+        <Typography variant="h5" data-testid="timer">
           {"Time: "}
           {minutes > 9 ? minutes : "0" + minutes}:{seconds > 9 ? seconds : "0" + seconds}
         </Typography>
       </Grid>
-      <Grid item xs={6}>
-
-        {/*<button onClick={() => dispatch(toggleMenu())}>ToggleMenu</button>*/}
-        <List className={classes.topMenu}>
-          <ListItem
-            button
-            className={classes.topButtons}
+      <Grid size={6}>
+        <List sx={{ display: "flex", flexDirection: "row", padding: 0, justifyContent: "center" }}>
+          <ListItemButton
+            sx={topButtonSx}
             onClick={() => {
               dispatch(restartGame({ numRows: numRows, numCols: numCols, numBombs: numOfBombs }))
             }}
           >
             <ListItemText primary="RESTART" />
-          </ListItem>
-          <ListItem
-            button
-            className={classes.topButtons}
+          </ListItemButton>
+          <ListItemButton
+            sx={topButtonSx}
             onClick={() => {
               dispatch(setGameState({ gameState: "startup" }))
             }}
           >
             <ListItemText primary="MENU" />
-          </ListItem>
+          </ListItemButton>
         </List>
       </Grid>
-      <Grid item xs>
-        <Typography variant="h5">{"Bombs left: " + bombsLeft}</Typography>
+      <Grid size="grow">
+        <Typography variant="h5" data-testid="bombs-left">
+          {"Bombs left: " + bombsLeft}
+        </Typography>
       </Grid>
     </Grid>
   )

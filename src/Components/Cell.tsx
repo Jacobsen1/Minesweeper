@@ -1,4 +1,3 @@
-import { makeStyles } from "@material-ui/core"
 import React from "react"
 import { cellSize, borderSize } from "./Game"
 import { Cell } from "../GameLogic"
@@ -9,31 +8,26 @@ import { leftClick, setIsDown, toggleFlag } from "../Redux/GameActions"
 import { useDispatch, useSelector } from "react-redux"
 import { RootState, selectGameState } from "../Redux/GameReducer"
 
-const useStyles = makeStyles((theme) => ({
-  cell: {
-    fontSize: "35px",
-    lineHeight: cellSize + "px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-}))
-
 interface CellProps {
   cell: Cell
 }
 
 export const CellComp = (props: CellProps) => {
-  const classes = useStyles()
   const dispatch = useDispatch()
 
   const gameState = useSelector<RootState, string>(selectGameState)
 
   return (
     <div
-      key={props.cell.row * props.cell.col + props.cell.col}
-      className={classes.cell}
+      data-testid={`cell-${props.cell.row}-${props.cell.col}`}
+      data-opened={props.cell.isOpened}
+      data-flagged={props.cell.hasFlag}
       style={{
+        fontSize: "35px",
+        lineHeight: cellSize + "px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
         backgroundColor: props.cell.isOpened || props.cell.isDown ? "darkGray" : "#c7c7c7",
         boxShadow: props.cell.isOpened || props.cell.isDown ? "1px 1px black inset" : "",
 
@@ -81,12 +75,12 @@ export const CellComp = (props: CellProps) => {
         props.cell.neighborMineCount > 0 ? (
           <span style={{ color: props.cell.textColor }}>{props.cell.neighborMineCount}</span>
         ) : props.cell.neighborMineCount !== 0 ? (
-          <Icon icon={mineIcon} />
+          <Icon icon={mineIcon} data-testid="mine" />
         ) : (
           ""
         )
       ) : props.cell.hasFlag ? (
-        <Icon icon={flagIcon} />
+        <Icon icon={flagIcon} data-testid="flag" />
       ) : (
         ""
       )}

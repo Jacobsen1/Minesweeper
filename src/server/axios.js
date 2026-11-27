@@ -1,23 +1,29 @@
-const axios = require("axios");
-const instance = axios.create({ baseURL: "http://localhost:3001" });
+import axios from "axios"
+
+const instance = axios.create({
+  baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:3001",
+})
 
 export const getHighscores = (highscoreType) => {
   return instance
     .get("highscore", { params: { gametype: highscoreType } })
     .then((response) => response.data)
-    .catch((err) => console.log(err));
-};
+    .catch((err) => {
+      console.log(err)
+      return []
+    })
+}
 
 export const newHighscore = (highscore) => {
   return instance
     .post("new_highscore", highscore)
     .then((response) => {
-      return { Status: response.status, Text: response.statusText };
+      return { Status: response.status, Text: response.statusText }
     })
     .catch((err) => {
       return {
-        Status: err.response.status,
-        Text: err.response.statusText,
-      };
-    });
-};
+        Status: err.response?.status ?? 0,
+        Text: err.response?.statusText ?? err.message,
+      }
+    })
+}
