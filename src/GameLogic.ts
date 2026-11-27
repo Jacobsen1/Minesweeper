@@ -1,180 +1,124 @@
-import { numCols, numOfBombs, numRows } from "./Components/Game";
-
 export type Cell = {
-  col: number;
-  row: number;
-  isOpened: boolean;
-  hasFlag: boolean;
-  hasMine: boolean;
-  isDown: boolean;
-  neighborMineCount: number;
-  textColor: string;
-};
+  col: number
+  row: number
+  isOpened: boolean
+  hasFlag: boolean
+  hasMine: boolean
+  isDown: boolean
+  neighborMineCount: number
+}
 
-export type Highscore = {
-  name: string;
-  score: string;
-  gametype: number;
-};
+/** Board size id, also used as the highscore `gametype`. */
+export type BoardSize = 1 | 2 | 3
 
-export const initBoard = (numRows: number, numCols: number): Cell[][] => {
-  console.log("Initializing Board");
+export const BOARD_SIZES: ReadonlyArray<{
+  id: BoardSize
+  label: string
+  width: number
+  height: number
+  cellSize: number
+}> = [
+  { id: 1, label: "16 x 30", width: 1500, height: 800, cellSize: 50 },
+  { id: 2, label: "16 x 16", width: 800, height: 800, cellSize: 50 },
+  { id: 3, label: "10 x 10", width: 800, height: 800, cellSize: 80 },
+]
 
-  let cellValues: number[][] = [];
-  for (let i = 0; i < numRows; i++) {
-    cellValues.push([]);
-    for (let j = 0; j < numCols; j++) {
-      cellValues[i].push(0);
-    }
+export const MINE_DENSITY = 0.15
+
+export const getBoardGeometry = (boardSize: BoardSize) => {
+  const { width, height, cellSize } = BOARD_SIZES.find((b) => b.id === boardSize)!
+  const numRows = height / cellSize
+  const numCols = width / cellSize
+  return {
+    width,
+    height,
+    cellSize,
+    numRows,
+    numCols,
+    borderSize: Math.ceil(cellSize * 0.15),
+    numBombs: Math.floor(MINE_DENSITY * numRows * numCols),
   }
-  cellValues = addBombs(cellValues);
+}
 
-  let cells: Cell[][] = [];
-  for (let i = 0; i < numRows; i++) {
-    cells.push([]);
-    for (let j = 0; j < numCols; j++) {
-      let textColor = "";
-      let neighborMineCount = cellValues[i][j];
-      if (neighborMineCount === 1) {
-        textColor = "blue";
-      } else if (neighborMineCount === 2) {
-        textColor = "green";
-      } else if (neighborMineCount === 3) {
-        textColor = "red";
-      } else if (neighborMineCount === 4) {
-        textColor = "darkblue";
-      } else if (neighborMineCount === 5) {
-        textColor = "brown";
-      } else if (neighborMineCount === 6) {
-        textColor = "cyan";
-      } else if (neighborMineCount === 7) {
-        textColor = "black";
-      } else if (neighborMineCount === 8) {
-        textColor = "gray";
-      }
-      cells[i].push({
-        row: i,
-        col: j,
-        isOpened: false,
-        hasFlag: false,
-        hasMine: cellValues[i][j] < 0 ? true : false,
-        isDown: false,
-        neighborMineCount: neighborMineCount,
-        textColor: textColor,
-      });
-    }
-  }
+/** Text colour for each neighbour mine count (index = count). */
+export const NUMBER_COLORS = ["", "blue", "green", "red", "darkblue", "brown", "cyan", "black", "gray"]
 
-  return cells;
-};
+const MINE = -100
 
-const addBombs = (arr: number[][]): number[][] => {
-  let numBombs = numOfBombs;
-  while (numBombs > 0) {
-    let i = Math.floor(Math.random() * numRows);
-    let j = Math.floor(Math.random() * numCols);
-    if (arr[i][j] < 0) {
-      continue;
-    } else {
-      arr[i][j] = -100;
-    }
-    if (i === 0) {
-      if (j - 1 >= 0) {
-        arr[i][j - 1] += 1;
-        arr[i + 1][j - 1] += 1;
-      }
-      if (j + 1 < numCols) {
-        arr[i][j + 1] += 1;
-        arr[i + 1][j + 1] += 1;
-      }
+export const initBoard = (numRows: number, numCols: number, numBombs: number): Cell[][] => {
+  const values = Array.from({ length: numRows }, () => Array<number>(numCols).fill(0))
+  addBombs(values, numBombs)
 
-      arr[i + 1][j] += 1;
-    } else if (i === numRows - 1) {
-      if (j - 1 >= 0) {
-        arr[i][j - 1] += 1;
-        arr[i - 1][j - 1] += 1;
-      }
-      if (j + 1 < numCols) {
-        arr[i][j + 1] += 1;
-        arr[i - 1][j + 1] += 1;
-      }
+  return values.map((rowValues, row) =>
+    rowValues.map((neighborMineCount, col) => ({
+      row,
+      col,
+      isOpened: false,
+      hasFlag: false,
+      hasMine: neighborMineCount < 0,
+      isDown: false,
+      neighborMineCount,
+    }))
+  )
+}
 
-      arr[i - 1][j] += 1;
-    } else if (j === 0 && i >= 0 && i < numRows) {
-      arr[i + 1][j] += 1;
-      arr[i + 1][j + 1] += 1;
-      arr[i][j + 1] += 1;
-      arr[i - 1][j] += 1;
-      arr[i - 1][j + 1] += 1;
-    } else if (j === numCols - 1 && i >= 0 && i < numRows) {
-      arr[i + 1][j] += 1;
-      arr[i + 1][j - 1] += 1;
-      arr[i][j - 1] += 1;
-      arr[i - 1][j] += 1;
-      arr[i - 1][j - 1] += 1;
-    } else {
-      arr[i - 1][j - 1] += 1;
-      arr[i - 1][j] += 1;
-      arr[i - 1][j + 1] += 1;
-      arr[i][j - 1] += 1;
-      arr[i][j + 1] += 1;
-      arr[i + 1][j - 1] += 1;
-      arr[i + 1][j] += 1;
-      arr[i + 1][j + 1] += 1;
-    }
-    numBombs--;
-  }
-
-  return arr;
-};
-export const findNeighbors = (cellsArr: Cell[][], i: number, j: number) => {
-  let neighbors = [];
+/** Coordinates of the in-bounds neighbours of (i, j) on a numRows x numCols grid. */
+const neighborCoords = (numRows: number, numCols: number, i: number, j: number) => {
+  const coords: Array<[number, number]> = []
   for (let x = -1; x < 2; x++) {
     for (let y = -1; y < 2; y++) {
-      let rx = x + i;
-      let ry = y + j;
-
-      if (rx >= 0 && ry >= 0 && rx < numRows && ry < numCols) {
-        if (x !== 0 || y !== 0) {
-          neighbors.push(cellsArr[i + x][j + y]);
-        }
+      const r = i + x
+      const c = j + y
+      if ((x !== 0 || y !== 0) && r >= 0 && c >= 0 && r < numRows && c < numCols) {
+        coords.push([r, c])
       }
     }
   }
-  return neighbors;
-};
+  return coords
+}
+
+const addBombs = (arr: number[][], numBombs: number) => {
+  const numRows = arr.length
+  const numCols = arr[0].length
+  while (numBombs > 0) {
+    // Draw row, then column; tests rely on this Math.random call order.
+    const i = Math.floor(Math.random() * numRows)
+    const j = Math.floor(Math.random() * numCols)
+    if (arr[i][j] < 0) continue
+
+    arr[i][j] = MINE
+    for (const [r, c] of neighborCoords(numRows, numCols, i, j)) arr[r][c] += 1
+    numBombs--
+  }
+}
+
+export const findNeighbors = (cells: Cell[][], i: number, j: number) =>
+  neighborCoords(cells.length, cells[0].length, i, j).map(([r, c]) => cells[r][c])
 
 export const findCellsToBeOpened = (cells: Cell[][], i: number, j: number) => {
-  let neighbors = findNeighbors(cells, i, j);
-  neighbors.forEach((e) => {
+  findNeighbors(cells, i, j).forEach((e) => {
     if (!e.hasFlag && !e.isOpened) {
-      cells[e.row][e.col].isOpened = true;
+      cells[e.row][e.col].isOpened = true
       if (e.neighborMineCount === 0) {
-        findCellsToBeOpened(cells, e.row, e.col);
+        findCellsToBeOpened(cells, e.row, e.col)
       }
     }
-  });
-};
+  })
+}
 
 export const gameOver = (cells: Cell[][]) => {
-  cells.forEach((row) => {
-    row.forEach((cell) => {
-      cell.isOpened = true;
-    });
-  });
-};
+  cells.flat().forEach((cell) => {
+    cell.isOpened = true
+  })
+}
 
+/** Won when every mine on the board is flagged. */
 export const checkIfWin = (cells: Cell[][]): boolean => {
-  let correct = 0;
-  cells.forEach((row) => {
-    row.forEach((cell) => {
-      if (cell.hasFlag && cell.hasMine) {
-        correct++;
-      }
-    });
-  });
-  if (correct === numOfBombs) {
-    return true;
-  }
-  return false;
-};
+  const all = cells.flat()
+  return all.filter((c) => c.hasFlag && c.hasMine).length === all.filter((c) => c.hasMine).length
+}
+
+const pad = (n: number) => String(n).padStart(2, "0")
+
+/** Formats elapsed time as mm:ss. */
+export const formatTime = (minutes: number, seconds: number) => `${pad(minutes)}:${pad(seconds)}`

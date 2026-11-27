@@ -1,44 +1,44 @@
-import {
-  Card,
-  CardContent,
-  Divider,
-  IconButton,
-  List,
-  Stack,
-  ListItemButton,
-  ListItemText,
-  Typography,
-} from "@mui/material"
-import { useEffect, useState } from "react"
-import { getHighscores } from "../server/axios"
+import { Card, CardContent, Divider, IconButton, List, Stack, ListItemButton, ListItemText, Typography } from "@mui/material"
+import { Fragment, useEffect, useState } from "react"
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
-import { Highscore } from "../GameLogic"
+import { getHighscores, Highscore } from "../api"
+import { BoardSize } from "../GameLogic"
+import { setBoardSize, setGameState } from "../Redux/gameSlice"
+import { useAppDispatch } from "../Redux/store"
 import { HighscoreList } from "./HighscoreList"
 import { CollapseMenu } from "./CollapseMenu"
+import { blueButtonSx } from "./styles"
 
-const menuButtonSx = {
-  height: "70px",
-  backgroundColor: "#2c8fb5",
-  "&:hover": {
-    backgroundColor: "#2780a2",
-  },
-}
+type SubMenu = "play" | "highscores"
+
+const SUB_MENUS: Array<{ key: SubMenu; label: string }> = [
+  { key: "play", label: "PLAY" },
+  { key: "highscores", label: "HIGHSCORES" },
+]
 
 export const StartMenu = () => {
-  const [playMenuOpen, setPlayMenuOpen] = useState(false)
-  const [highscoreMenuOpen, setHighscoreMenuOpen] = useState(false)
+  const dispatch = useAppDispatch()
+  const [openMenu, setOpenMenu] = useState<SubMenu | null>(null)
   const [showHighscore, setShowHighscore] = useState(false)
 
   const [highscore, setHighscore] = useState<Highscore[]>([])
-  const [highscoreType, setHighscoreType] = useState<number>(0)
+  const [highscoreType, setHighscoreType] = useState<BoardSize | 0>(0)
 
   useEffect(() => {
     if (highscoreType > 0) {
-      getHighscores(highscoreType).then((res: Highscore[]) => {
-        setHighscore(res)
-      })
+      getHighscores(highscoreType).then(setHighscore)
     }
   }, [highscoreType])
+
+  const onSelect = (menu: SubMenu) => (boardSize: BoardSize) => {
+    if (menu === "play") {
+      dispatch(setBoardSize(boardSize))
+      dispatch(setGameState("running"))
+    } else {
+      setHighscoreType(boardSize)
+      setShowHighscore(true)
+    }
+  }
 
   return (
     <div
@@ -59,7 +59,7 @@ export const StartMenu = () => {
           position: "relative",
         }}
       >
-        {showHighscore ? (
+        {showHighscore && (
           <IconButton
             aria-label="back"
             sx={{ position: "absolute", left: "0", top: "0" }}
@@ -67,8 +67,6 @@ export const StartMenu = () => {
           >
             <ArrowBackIcon />
           </IconButton>
-        ) : (
-          ""
         )}
         <CardContent>
           <Stack direction="column" sx={{ justifyContent: "center", alignItems: "center" }}>
@@ -79,50 +77,23 @@ export const StartMenu = () => {
               {showHighscore ? (
                 <HighscoreList highscores={highscore} />
               ) : (
-                <>
-                  <ListItemButton
-                    sx={menuButtonSx}
-                    onClick={() => {
-                      setPlayMenuOpen(!playMenuOpen)
-                      setHighscoreMenuOpen(false)
-                    }}
-                  >
-                    <ListItemText
-                      primary="PLAY"
-                      sx={{ textAlign: "center" }}
-                      slotProps={{ primary: { variant: "h5" } }}
-                    />
-                  </ListItemButton>
-                  <Divider />
-                  <CollapseMenu
-                    open={playMenuOpen}
-                    menuType={1}
-                    setShowHighscore={setShowHighscore}
-                    setHighscoreType={setHighscoreType}
-                  />
-                  <Divider />
-                  <ListItemButton
-                    sx={menuButtonSx}
-                    onClick={() => {
-                      setHighscoreMenuOpen(!highscoreMenuOpen)
-                      setPlayMenuOpen(false)
-                    }}
-                  >
-                    <ListItemText
-                      primary="HIGHSCORES"
-                      sx={{ textAlign: "center" }}
-                      slotProps={{ primary: { variant: "h5" } }}
-                    />
-                  </ListItemButton>
-                  <Divider />
-                  <CollapseMenu
-                    open={highscoreMenuOpen}
-                    menuType={2}
-                    setShowHighscore={setShowHighscore}
-                    setHighscoreType={setHighscoreType}
-                  />
-                  <Divider />
-                </>
+                SUB_MENUS.map(({ key, label }) => (
+                  <Fragment key={key}>
+                    <ListItemButton
+                      sx={{ ...blueButtonSx, height: "70px" }}
+                      onClick={() => setOpenMenu((current) => (current === key ? null : key))}
+                    >
+                      <ListItemText
+                        primary={label}
+                        sx={{ textAlign: "center" }}
+                        slotProps={{ primary: { variant: "h5" } }}
+                      />
+                    </ListItemButton>
+                    <Divider />
+                    <CollapseMenu open={openMenu === key} onSelect={onSelect(key)} />
+                    <Divider />
+                  </Fragment>
+                ))
               )}
             </List>
           </Stack>

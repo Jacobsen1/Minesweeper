@@ -1,88 +1,80 @@
 import React from "react"
-import { cellSize, borderSize } from "./Game"
-import { Cell } from "../GameLogic"
 import { Icon } from "@iconify/react"
 import mineIcon from "@iconify-icons/mdi/mine"
 import flagIcon from "@iconify-icons/dashicons/flag"
-import { leftClick, setIsDown, toggleFlag } from "../Redux/GameActions"
-import { useDispatch, useSelector } from "react-redux"
-import { RootState, selectGameState } from "../Redux/GameReducer"
+import { Cell, NUMBER_COLORS } from "../GameLogic"
+import { leftClick, setIsDown, toggleFlag } from "../Redux/gameSlice"
+import { useAppDispatch, useAppStore } from "../Redux/store"
 
 interface CellProps {
   cell: Cell
+  cellSize: number
+  borderSize: number
 }
 
-export const CellComp = (props: CellProps) => {
-  const dispatch = useDispatch()
+const CellComp = ({ cell, cellSize, borderSize }: CellProps) => {
+  const dispatch = useAppDispatch()
+  // Game state is only needed inside the handlers, so read it on demand instead of
+  // subscribing every cell to the store.
+  const store = useAppStore()
+  const isRunning = () => store.getState().gameState === "running"
 
-  const gameState = useSelector<RootState, string>(selectGameState)
+  const pos = { i: cell.row, j: cell.col }
+  const pressed = cell.isOpened || cell.isDown
+  const setDown = (isDown: boolean) => (e: React.MouseEvent) => {
+    if (e.button === 0 && isRunning()) dispatch(setIsDown({ ...pos, isDown }))
+  }
 
   return (
     <div
-      data-testid={`cell-${props.cell.row}-${props.cell.col}`}
-      data-opened={props.cell.isOpened}
-      data-flagged={props.cell.hasFlag}
+      data-testid={`cell-${cell.row}-${cell.col}`}
+      data-opened={cell.isOpened}
+      data-flagged={cell.hasFlag}
       style={{
         fontSize: "35px",
         lineHeight: cellSize + "px",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: props.cell.isOpened || props.cell.isDown ? "darkGray" : "#c7c7c7",
-        boxShadow: props.cell.isOpened || props.cell.isDown ? "1px 1px black inset" : "",
-
-        borderLeft: props.cell.isOpened || props.cell.isDown ? "" : borderSize + "px solid #e6e6e6",
-        borderTop: props.cell.isOpened || props.cell.isDown ? "" : borderSize + "px solid #e6e6e6",
-        borderRight:
-          props.cell.isOpened || props.cell.isDown ? "" : borderSize + "px solid #808080",
-        borderBottom:
-          props.cell.isOpened || props.cell.isDown ? "" : borderSize + "px solid #808080",
-        width:
-          props.cell.isOpened || props.cell.isDown ? cellSize + "px" : cellSize - 2 * borderSize,
-        height:
-          props.cell.isOpened || props.cell.isDown ? cellSize + "px" : cellSize - 2 * borderSize,
+        ...(pressed
+          ? {
+              backgroundColor: "darkGray",
+              boxShadow: "1px 1px black inset",
+              width: cellSize,
+              height: cellSize,
+            }
+          : {
+              backgroundColor: "#c7c7c7",
+              borderLeft: `${borderSize}px solid #e6e6e6`,
+              borderTop: `${borderSize}px solid #e6e6e6`,
+              borderRight: `${borderSize}px solid #808080`,
+              borderBottom: `${borderSize}px solid #808080`,
+              width: cellSize - 2 * borderSize,
+              height: cellSize - 2 * borderSize,
+            }),
       }}
-      //RIGHT CLICK
       onContextMenu={(e) => {
         e.preventDefault()
-        if (gameState === "running") {
-          dispatch(toggleFlag({ i: props.cell.row, j: props.cell.col }))
-        }
+        if (isRunning()) dispatch(toggleFlag(pos))
       }}
-      //LEFT CLICK
       onClick={() => {
-        if (gameState === "running") {
-          dispatch(leftClick({ i: props.cell.row, j: props.cell.col }))
-        }
+        if (isRunning()) dispatch(leftClick(pos))
       }}
-      onMouseDown={(e) => {
-        if (e.button === 0 && gameState === "running") {
-          dispatch(setIsDown({ i: props.cell.row, j: props.cell.col, isDown: true }))
-        }
-      }}
-      onMouseUp={(e) => {
-        if (e.button === 0 && gameState === "running") {
-          dispatch(setIsDown({ i: props.cell.row, j: props.cell.col, isDown: false }))
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (e.button === 0 && gameState === "running") {
-          dispatch(setIsDown({ i: props.cell.row, j: props.cell.col, isDown: false }))
-        }
-      }}
+      onMouseDown={setDown(true)}
+      onMouseUp={setDown(false)}
+      // Releasing only does something for pressed or opened (non-flagged) cells.
+      onMouseLeave={!cell.hasFlag && pressed ? setDown(false) : undefined}
     >
-      {props.cell.isOpened ? (
-        props.cell.neighborMineCount > 0 ? (
-          <span style={{ color: props.cell.textColor }}>{props.cell.neighborMineCount}</span>
-        ) : props.cell.neighborMineCount !== 0 ? (
+      {cell.isOpened ? (
+        cell.hasMine ? (
           <Icon icon={mineIcon} data-testid="mine" />
         ) : (
-          ""
+          cell.neighborMineCount > 0 && (
+            <span style={{ color: NUMBER_COLORS[cell.neighborMineCount] }}>{cell.neighborMineCount}</span>
+          )
         )
-      ) : props.cell.hasFlag ? (
-        <Icon icon={flagIcon} data-testid="flag" />
       ) : (
-        ""
+        cell.hasFlag && <Icon icon={flagIcon} data-testid="flag" />
       )}
     </div>
   )
