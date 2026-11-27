@@ -1,0 +1,109 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Lint, type-check and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: build
+          path: build/
+          retention-days: 7
+
+  ui-tests:
+    name: Playwright UI tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox
+      - name: Run Playwright tests
+        run: npx playwright test
+      - name: Upload Playwright report
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
+  api-smoke:
+    name: Highscore API smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: "1234"
+          MYSQL_DATABASE: minesweeper
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -p1234"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      DB_HOST: 127.0.0.1
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Create schema
+        run: |
+          mysql -h 127.0.0.1 -uroot -p1234 minesweeper -e "
+            CREATE TABLE highscore (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              name VARCHAR(16) NOT NULL,
+              score VARCHAR(8) NOT NULL,
+              gametype INT NOT NULL
+            );"
+      - name: Start API and exercise endpoints
+        run: |
+          npm run server > server.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf "http://localhost:3001/highscore?gametype=3" && break; sleep 1; done
+          curl -sf -X POST -H "Content-Type: application/json" \
+            -d '{"name":"ci","score":"00:42","gametype":3}' http://localhost:3001/new_highscore
+          # A malicious gametype must not be interpreted as SQL.
+          curl -sf "http://localhost:3001/highscore?gametype=0%20OR%201=1" | tee injected.json
+          test "$(cat injected.json)" = "[]"
+          curl -sf "http://localhost:3001/highscore?gametype=3" | tee result.json
+          grep -q '"name":"ci"' result.json
+      - name: Server log
+        if: ${{ always() }}
+        run: cat server.log || true
