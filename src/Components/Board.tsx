@@ -1,35 +1,19 @@
-import { Grid } from "@material-ui/core"
-import { makeStyles } from "@material-ui/styles"
-import React from "react"
+import { Box, Stack } from "@mui/material"
 import { useSelector } from "react-redux"
 import { height, numCols, numRows, width } from "./Game"
 import { Cell } from "../GameLogic"
 import { RootState, selectCells } from "../Redux/GameReducer"
 import { MemoizedCell } from "./Cell"
 
-const useStyles = makeStyles((theme) => ({
-  board: {
-    position: "relative",
-    margin: "auto",
-
-    display: "grid",
-  },
-}))
-
 export const Board = () => {
-  const classes = useStyles()
   const cells = useSelector<RootState, Cell[][]>(selectCells)
 
   return (
-    <Grid
-      container
-      direction="column"
-      alignItems="center"
-      style={{ backgroundColor: "#c7c7c7", height: "100%" }}
-    >
-      <Grid item>
-        <div
-          className={classes.board}
+    <Stack direction="column" sx={{ alignItems: "center" }} style={{ backgroundColor: "#c7c7c7", height: "100%" }}>
+      <div>
+        <Box
+          data-testid="board"
+          sx={{ position: "relative", margin: "auto", display: "grid" }}
           style={{
             gridTemplateColumns: "repeat(" + numCols + ", 1fr)",
             gridTemplateRows: "repeat(" + numRows + ", 1fr)",
@@ -37,13 +21,13 @@ export const Board = () => {
             height: height,
           }}
         >
-          {cells.map((row, i) => {
-            return row.map((cell, j) => {
-              return <MemoizedCell cell={cell} key={i * j + j} />
+          {cells.map((row) => {
+            return row.map((cell) => {
+              return <MemoizedCell cell={cell} key={`${cell.row}-${cell.col}`} />
             })
           })}
-        </div>
-      </Grid>
-    </Grid>
+        </Box>
+      </div>
+    </Stack>
   )
 }
