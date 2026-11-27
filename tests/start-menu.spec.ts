@@ -1,4 +1,6 @@
-import { test, expect, openMenu, startGame, BOARD_SIZES, mineCount, type BoardLabel } from "./fixtures"
+import { test, expect, openMenu, startGame, boardGeometry, type BoardLabel } from "./fixtures"
+
+const LABELS: BoardLabel[] = ["16 x 30", "16 x 16", "10 x 10"]
 
 test.describe("Start menu", () => {
   test.beforeEach(async ({ page }) => {
@@ -14,17 +16,17 @@ test.describe("Start menu", () => {
 
   test("PLAY toggles the board size options", async ({ page }) => {
     await openMenu(page, "PLAY")
-    for (const label of Object.keys(BOARD_SIZES)) {
+    for (const label of LABELS) {
       await expect(page.getByRole("button", { name: label })).toBeVisible()
     }
     await page.getByRole("button", { name: "PLAY" }).click()
     await expect(page.getByRole("button", { name: "10 x 10" })).toBeHidden()
   })
 
-  for (const label of Object.keys(BOARD_SIZES) as BoardLabel[]) {
+  for (const label of LABELS) {
     test(`starts a ${label} game`, async ({ page }) => {
       await startGame(page, label)
-      await expect(page.getByTestId("bombs-left")).toHaveText(`Bombs left: ${mineCount(label)}`)
+      await expect(page.getByTestId("bombs-left")).toHaveText(`Bombs left: ${boardGeometry(label).numBombs}`)
       await expect(page.getByTestId("timer")).toHaveText(/^Time: 00:0[0-1]$/)
       await expect(page.getByRole("button", { name: "RESTART" })).toBeVisible()
       await expect(page.getByRole("button", { name: "MENU" })).toBeVisible()
